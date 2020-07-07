@@ -1,0 +1,79 @@
+#尺度变换
+>import cv2
+import numpy as np
+img = cv2.imread("roi.jpg")
+print(img.shape)
+height,width = img.shape[:2]
+img_200_300 = cv2.resize(img,(200,300))#指定长宽
+img_proportion = cv2.resize(img,None,fx=1.5,fy=1.5,interpolation = cv2.INTER_NEAREST)
+'''按比例插入，默认为线性插值cv2.INTER_LINEAR，这里指定为最近邻插值INTER_NEAREST,
+此外还有INTER_CUBIC  (三次样条插值),INTER_AREA  (区域插值)
+'''
+img_border = cv2.copyMakeBorder(img,20,20,20,20,borderType=cv2.BORDER_CONSTANT,value=(0,0,255))
+ 贴一个红边
+cv2.imshow("200*300",img_border)
+cv2.waitKey(0)
+print(height,width)
+>
+#坐标变换
+* A= [[1,0][0,1]]  B=[100,50] 分别为线性变换项（缩放、旋转等）和平移项，共同实现缩放、旋转、剪切和平移.warpAffine变换相当于 T= A[x,y] + B = M[x,y,1]。*
+
+* 旋转公式如下:
+
+![warpAffine旋转公式](../img/warpAffine旋转公式.png)
+
+此处注意：
+>Third argument of the cv2.warpAffine() function is the size of the output image, which should be in the form of (width, height). Remember width = number of columns, and height = number of rows.
+
+平移
+>import cv2
+import numpy as np
+img = cv2.imread("roi.jpg")
+M = np.float32([[1,0,100],[0,1,50]])cv2.imshow("img",img)
+dst = cv2.warpAffine(img,M,(img.shape[1],img.shape[0]))
+cv2.imshow("dst",dst)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+旋转
+>import cv2
+import numpy as np
+img = cv2.imread("roi.jpg")
+rows,cols = img.shape[0:2]
+M = cv2.getRotationMatrix2D((cols/2,rows/2),90,1)
+img_rotation = cv2.warpAffine(img,M,(cols,rows))
+cv2.imshow("img",img_rotation)
+cv2.waitKey(0)
+
+#仿射变换
+性质：原图中的平行线仍将平行，因此可有三个不在同一条直线的点确定变换矩阵M
+
+要点：使用cv2.getAffineTransform由确定的三个点的仿射变换以得到变换矩阵M
+>import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+img = cv2.imread('roi.jpg')
+rows,cols,ch = img.shape
+pts1 = np.float32([[50,50],[200,50],[50,200]])
+pts2 = np.float32([[10,100],[200,50],[100,250]])
+M = cv2.getAffineTransform(pts1,pts2)
+dst = cv2.warpAffine(img,M,(cols,rows))
+plt.subplot(121),plt.imshow(img),plt.title('Input')
+plt.subplot(122),plt.imshow(dst),plt.title('Output')
+plt.show()
+>
+#透视变换
+是仿射变换的普遍情况，使用getPerspectiveTransform(四点矩阵)
+>import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+img = cv2.imread('roi.jpg')
+rows,cols,ch = img.shape
+pts1 = np.float32([[56,65],[368,52],[28,387],[389,390]])
+pts2 = np.float32([[0,0],[300,0],[0,300],[300,300]])
+M = cv2.getPerspectiveTransform(pts1,pts2)
+dst = cv2.warpPerspective(img,M,(300,300))
+plt.subplot(121),plt.imshow(img),plt.title('Input')
+plt.subplot(122),plt.imshow(dst),plt.title('Output')
+plt.show()
+>
